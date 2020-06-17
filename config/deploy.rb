@@ -2,6 +2,7 @@ require 'mina/bundler'
 require 'mina/rails'
 require 'mina/git'
 require 'mina/rvm'
+require 'mina/puma'
 # require 'mina/rbenv'  # for rbenv support. (https://rbenv.org)
 # require 'mina/rvm'    # for rvm support. (https://rvm.io)
 
@@ -47,7 +48,12 @@ end
 # Put any custom commands you need to run at setup
 # All paths in `shared_dirs` and `shared_paths` will be created on their own.
 task :setup do
-  # command %{rbenv install 2.3.0 --skip-existing}
+  # command %{rvm install 2.6.3 --skip-existing --disable-binary}
+  command %[mkdir -p "#{fetch(:shared_path)}/tmp/sockets"]
+  command %[chmod g+rx,u+rwx "#{fetch(:shared_path)}/tmp/sockets"]
+
+  command %[mkdir -p "#{fetch(:shared_path)}/tmp/pids"]
+  command %[chmod g+rx,u+rwx "#{fetch(:shared_path)}/tmp/pids"]
 end
 
 desc "Deploys the current version to the server."
@@ -71,7 +77,7 @@ task :deploy do
       in_path(fetch(:current_path)) do
         command %{mkdir -p tmp/}
         command %{touch tmp/restart.txt}
-        command %{rails s -d}
+         invoke :'puma:start'
       end
     end
   end
