@@ -1,5 +1,7 @@
+require 'mina/bundler'
 require 'mina/rails'
 require 'mina/git'
+require 'mina/rvm'
 # require 'mina/rbenv'  # for rbenv support. (https://rbenv.org)
 # require 'mina/rvm'    # for rvm support. (https://rvm.io)
 
@@ -10,11 +12,16 @@ require 'mina/git'
 #   branch       - Branch name to deploy. (needed by mina/git)
 
 set :application_name, 'foobar'
+set :user, 'coder1'
 set :domain, 'c-api.jinengquan.cn'
 set :deploy_to, '/home/coder1/test_mina'
 set :repository, 'git@github.com:hzyhzy/mina_pro.git'
 set :branch, 'master'
+set :rvm_use_path, '/home/coder1/.rvm/bin/rvm'
 
+set :shared_files, fetch(:shared_files, []).push('config/database.yml', 'config/master.key')
+
+ruby_version = 'ruby-2.6.3'
 # Optional settings:
 #   set :user, 'foobar'          # Username in the server to SSH to.
 #   set :port, '30000'           # SSH port number.
@@ -34,7 +41,7 @@ task :remote_environment do
   # invoke :'rbenv:load'
 
   # For those using RVM, use this to load an RVM version@gemset.
-  # invoke :'rvm:use', 'ruby-1.9.3-p125@default'
+  invoke :'rvm:use', ruby_version
 end
 
 # Put any custom commands you need to run at setup
@@ -50,6 +57,9 @@ task :deploy do
   deploy do
     # Put things that will set up an empty directory into a fully set-up
     # instance of your project.
+    comment %{domain: #{fetch :domain}}
+    comment %{path: #{fetch :deploy_to}}
+    comment %{branch: #{fetch :branch}}
     invoke :'git:clone'
     invoke :'deploy:link_shared_paths'
     invoke :'bundle:install'
@@ -61,6 +71,7 @@ task :deploy do
       in_path(fetch(:current_path)) do
         command %{mkdir -p tmp/}
         command %{touch tmp/restart.txt}
+        command %{rails s -d}
       end
     end
   end
